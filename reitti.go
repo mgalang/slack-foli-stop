@@ -24,13 +24,14 @@ func getJSON(path string, result interface{}) error {
 
 func main() {
 	type RecordItem struct {
-		Destinationdisplay string
-		Aimedarrivaltime   int
+		Destinationdisplay    string
+		Aimedarrivaltime      int64
+		Expecteddeparturetime int64
 	}
 
 	type SiriJSON struct {
 		Status     string
-		Servertime int
+		Servertime int64
 		Result     []RecordItem
 	}
 
