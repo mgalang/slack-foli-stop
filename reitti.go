@@ -9,6 +9,10 @@ import (
 func getJSON(path string, result interface{}) error {
 	resp, err := http.Get(path)
 
+	if resp.StatusCode == 404 {
+		panic("Stop not found")
+	}
+
 	if err != nil {
 		panic(err)
 	}
