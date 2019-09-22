@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -14,6 +16,37 @@ import (
 //
 // https://serverless.com/framework/docs/providers/aws/events/apigateway/#lambda-proxy-integration
 type Response events.APIGatewayProxyResponse
+
+// RecordItem inferface.
+type RecordItem struct {
+	Destinationdisplay    string
+	Aimedarrivaltime      int64
+	Expecteddeparturetime int64
+}
+
+// SiriJSON interface.
+type SiriJSON struct {
+	Status     string
+	Servertime int64
+	Result     []RecordItem
+}
+
+// Get JSON from URL helper method.
+func getJSON(path string, result interface{}) error {
+	resp, err := http.Get(path)
+
+	if resp.StatusCode != 200 {
+		panic("Server error")
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(result)
+}
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(ctx context.Context) (Response, error) {
