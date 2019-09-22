@@ -52,12 +52,39 @@ func getJSON(path string, result interface{}) error {
 func Handler(ctx context.Context) (Response, error) {
 	var buf bytes.Buffer
 
-	body, err := json.Marshal(map[string]interface{}{
-		"message": "Go Serverless v1.0! Your function executed successfully!",
-	})
+	j := SiriJSON{}
+
+	// TODO, use parameter.
+	var stopcode = "t4"
+
+	err := getJSON("https://data.foli.fi/siri/sm/"+stopcode, &j)
+
 	if err != nil {
 		return Response{StatusCode: 404}, err
 	}
+
+	var count = len(j.Result)
+
+	if count > 3 {
+		count = 3
+	}
+
+	var responseText = ""
+
+	for index := 0; index < count; index++ {
+		t := time.Unix(j.Result[index].Expecteddeparturetime, 0)
+
+		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.Format("01:01:01")
+	}
+
+	body, err := json.Marshal(map[string]interface{}{
+		"text": responseText,
+	})
+
+	if err != nil {
+		return Response{StatusCode: 404}, err
+	}
+
 	json.HTMLEscape(&buf, body)
 
 	resp := Response{
