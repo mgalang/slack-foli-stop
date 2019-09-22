@@ -74,7 +74,7 @@ func Handler(ctx context.Context) (Response, error) {
 	for index := 0; index < count; index++ {
 		t := time.Unix(j.Result[index].Expecteddeparturetime, 0)
 
-		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.Format("01:01:01")
+		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.Format("01:01:01") + "\n"
 	}
 
 	body, err := json.Marshal(map[string]interface{}{
