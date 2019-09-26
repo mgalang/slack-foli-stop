@@ -81,7 +81,7 @@ func handleSlack(stopcode string) (string, bool) {
 	for index := 0; index < count; index++ {
 		t := time.Unix(j.Result[index].Expecteddeparturetime, 0)
 
-		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.In(loc).Format("15:04:05") + "\n"
+		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.In(loc).Format("15:04") + "\n"
 	}
 
 	return responseText, true
