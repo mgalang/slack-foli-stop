@@ -3,20 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"time"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/gin-gonic/gin"
 )
-
-// Response is of type APIGatewayProxyResponse since we're leveraging the
-// AWS Lambda Proxy Request functionality (default behavior)
-//
-// https://serverless.com/framework/docs/providers/aws/events/apigateway/#lambda-proxy-integration
-type Response events.APIGatewayProxyResponse
 
 // RecordItem inferface.
 type RecordItem struct {
@@ -30,6 +24,11 @@ type SiriJSON struct {
 	Status     string
 	Servertime int64
 	Result     []RecordItem
+}
+
+// NoResponse interface.
+type NoResponse struct {
+	Message string
 }
 
 // Get JSON from URL helper method.
@@ -56,14 +55,12 @@ func validateStopCode(code string) bool {
 	return r.MatchString(code)
 }
 
-// Handler is our lambda handler invoked by the `lambda.Start` function call
-func Handler(req events.APIGatewayProxyRequest) (Response, error) {
+// Handle the slack request.
+func handleSlack(stopcode string) (string, bool) {
 	var buf bytes.Buffer
 
-	var stopcode = req.QueryStringParameters["text"]
-
 	if !validateStopCode(stopcode) {
-		return Response{StatusCode: 404}, errors.New("Invalid code")
+		return "", false
 	}
 
 	j := SiriJSON{}
@@ -71,7 +68,7 @@ func Handler(req events.APIGatewayProxyRequest) (Response, error) {
 	err := getJSON("https://data.foli.fi/siri/sm/"+stopcode, &j)
 
 	if err != nil {
-		return Response{StatusCode: 404}, err
+		return "", false
 	}
 
 	var count = len(j.Result)
@@ -90,28 +87,40 @@ func Handler(req events.APIGatewayProxyRequest) (Response, error) {
 		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.In(loc).Format("15:04:05") + "\n"
 	}
 
-	body, err := json.Marshal(map[string]interface{}{
+	responseJSON, err := json.Marshal(map[string]interface{}{
 		"text": responseText,
 	})
 
 	if err != nil {
-		return Response{StatusCode: 404}, err
+		return "", false
 	}
 
-	json.HTMLEscape(&buf, body)
+	json.HTMLEscape(&buf, responseJSON)
 
-	resp := Response{
-		StatusCode:      200,
-		IsBase64Encoded: false,
-		Body:            buf.String(),
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-	}
-
-	return resp, nil
+	return buf.String(), true
 }
 
 func main() {
-	lambda.Start(Handler)
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
+	router := gin.New()
+	router.Use(gin.Logger())
+
+	router.GET("/slack", func(c *gin.Context) {
+		text := c.DefaultQuery("text", "")
+
+		responseJSON, ok := handleSlack(text)
+
+		if ok {
+			c.JSON(http.StatusOK, responseJSON)
+		} else {
+			c.JSON(http.StatusBadRequest, NoResponse{Message: "Error"})
+		}
+	})
+
+	router.Run(":" + port)
 }
