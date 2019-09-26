@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -24,6 +23,11 @@ type SiriJSON struct {
 	Status     string
 	Servertime int64
 	Result     []RecordItem
+}
+
+// SlackResponse interface
+type SlackResponse struct {
+	Text string
 }
 
 // NoResponse interface.
@@ -57,8 +61,6 @@ func validateStopCode(code string) bool {
 
 // Handle the slack request.
 func handleSlack(stopcode string) (string, bool) {
-	var buf bytes.Buffer
-
 	if !validateStopCode(stopcode) {
 		return "", false
 	}
@@ -87,17 +89,7 @@ func handleSlack(stopcode string) (string, bool) {
 		responseText += "Destination: " + j.Result[index].Destinationdisplay + ", Leaving at: " + t.In(loc).Format("15:04:05") + "\n"
 	}
 
-	responseJSON, err := json.Marshal(map[string]interface{}{
-		"text": responseText,
-	})
-
-	if err != nil {
-		return "", false
-	}
-
-	json.HTMLEscape(&buf, responseJSON)
-
-	return buf.String(), true
+	return responseText, true
 }
 
 func main() {
@@ -116,7 +108,7 @@ func main() {
 		responseJSON, ok := handleSlack(text)
 
 		if ok {
-			c.JSON(http.StatusOK, responseJSON)
+			c.JSON(http.StatusOK, SlackResponse{Text: responseJSON})
 		} else {
 			c.JSON(http.StatusBadRequest, NoResponse{Message: "Error"})
 		}
