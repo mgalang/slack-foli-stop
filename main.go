@@ -27,12 +27,7 @@ type SiriJSON struct {
 
 // SlackResponse interface
 type SlackResponse struct {
-	Text string
-}
-
-// NoResponse interface.
-type NoResponse struct {
-	Message string
+	Text string `json:"text"`
 }
 
 // Get JSON from URL helper method.
@@ -110,7 +105,7 @@ func main() {
 		if ok {
 			c.JSON(http.StatusOK, SlackResponse{Text: responseJSON})
 		} else {
-			c.JSON(http.StatusBadRequest, NoResponse{Message: "Error"})
+			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
 		}
 	})
 
