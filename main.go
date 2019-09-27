@@ -98,9 +98,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	router.GET("/slack", func(c *gin.Context) {
+	router.POST("/slack", func(c *gin.Context) {
 		text := c.DefaultQuery("text", "")
-
 		s, err := slack.SlashCommandParse(c.Request)
 
 		if err != nil {
