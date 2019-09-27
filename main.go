@@ -99,7 +99,6 @@ func main() {
 	router.Use(gin.Logger())
 
 	router.POST("/slack", func(c *gin.Context) {
-		text := c.DefaultQuery("text", "")
 		s, err := slack.SlashCommandParse(c.Request)
 
 		if err != nil {
@@ -107,6 +106,7 @@ func main() {
 			return
 		}
 
+		text := s.Text
 		token := os.Getenv("SECRET")
 
 		if !s.ValidateToken(token) {
