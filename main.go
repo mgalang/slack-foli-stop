@@ -99,8 +99,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	maxEventsPerSec := 5
-	maxBurstSize := 5
+	maxEventsPerSec := 2
+	maxBurstSize := 2
 	router.Use(middleware.Throttle(maxEventsPerSec, maxBurstSize))
 
 	router.POST("/slack", func(c *gin.Context) {
