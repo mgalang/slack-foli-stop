@@ -104,14 +104,14 @@ func main() {
 		s, err := slack.SlashCommandParse(c.Request)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
+			c.JSON(http.StatusOK, SlackResponse{Text: "Command Error"})
 			return
 		}
 
 		token := os.Getenv("SECRET")
 
 		if !s.ValidateToken(token) {
-			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
+			c.JSON(http.StatusOK, SlackResponse{Text: "Validation Error"})
 			return
 		}
 
@@ -120,7 +120,7 @@ func main() {
 		if ok {
 			c.JSON(http.StatusOK, SlackResponse{Text: responseJSON})
 		} else {
-			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
+			c.JSON(http.StatusOK, SlackResponse{Text: "Error"})
 		}
 	})
 
