@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nlopes/slack"
+	middleware "github.com/s12i/gin-throttle"
 )
 
 // RecordItem inferface.
@@ -97,6 +98,10 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
+
+	maxEventsPerSec := 5
+	maxBurstSize := 5
+	router.Use(middleware.Throttle(maxEventsPerSec, maxBurstSize))
 
 	router.POST("/slack", func(c *gin.Context) {
 		s, err := slack.SlashCommandParse(c.Request)
