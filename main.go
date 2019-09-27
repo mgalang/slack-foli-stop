@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nlopes/slack"
 )
 
 // RecordItem inferface.
@@ -99,6 +100,20 @@ func main() {
 
 	router.GET("/slack", func(c *gin.Context) {
 		text := c.DefaultQuery("text", "")
+
+		s, err := slack.SlashCommandParse(c.Request)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
+			return
+		}
+
+		token := os.Getenv("SECRET")
+
+		if !s.ValidateToken(token) {
+			c.JSON(http.StatusBadRequest, SlackResponse{Text: "Error"})
+			return
+		}
 
 		responseJSON, ok := handleSlack(text)
 
