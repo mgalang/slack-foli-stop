@@ -13,19 +13,22 @@ import (
 	middleware "github.com/s12i/gin-throttle"
 )
 
-// RecordItem inferface.
-type RecordItem struct {
-	Destinationdisplay    string
-	Aimedarrivaltime      int64
-	Expecteddeparturetime int64
-	Lineref               string
-}
+// Maximum items to show in list.
+const maxItems = 3
 
-// SiriJSON interface.
-type SiriJSON struct {
+// API endpoint.
+const endpoint = "https://data.foli.fi/siri/sm/"
+
+// APIResponse interface.
+type APIResponse struct {
 	Status     string
 	Servertime int64
-	Result     []RecordItem
+	Result     []struct {
+		Destinationdisplay    string
+		Aimedarrivaltime      int64
+		Expecteddeparturetime int64
+		Lineref               string
+	}
 }
 
 // SlackResponse interface
@@ -57,15 +60,15 @@ func validateStopCode(code string) bool {
 	return r.MatchString(code)
 }
 
-// Handle the slack request.
+// Slack request handler
 func handleSlack(stopcode string) (string, bool) {
 	if !validateStopCode(stopcode) {
 		return "", false
 	}
 
-	j := SiriJSON{}
+	j := APIResponse{}
 
-	err := getJSON("https://data.foli.fi/siri/sm/"+stopcode, &j)
+	err := getJSON(endpoint+stopcode, &j)
 
 	if err != nil {
 		return "", false
@@ -73,8 +76,8 @@ func handleSlack(stopcode string) (string, bool) {
 
 	var count = len(j.Result)
 
-	if count > 3 {
-		count = 3
+	if count > maxItems {
+		count = maxItems
 	}
 
 	var responseText = ""
@@ -90,6 +93,7 @@ func handleSlack(stopcode string) (string, bool) {
 	return responseText, true
 }
 
+// Main handler
 func main() {
 	port := os.Getenv("PORT")
 
@@ -112,15 +116,12 @@ func main() {
 			return
 		}
 
-		text := s.Text
-		token := os.Getenv("SECRET")
-
-		if !s.ValidateToken(token) {
+		if !s.ValidateToken(os.Getenv("SECRET")) {
 			c.JSON(http.StatusOK, SlackResponse{Text: "Validation Error"})
 			return
 		}
 
-		responseJSON, ok := handleSlack(text)
+		responseJSON, ok := handleSlack(s.Text)
 
 		if ok {
 			c.JSON(http.StatusOK, SlackResponse{Text: responseJSON})
