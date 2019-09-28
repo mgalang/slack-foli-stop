@@ -7,4 +7,4 @@ clean:
 	rm -rf ./bin
 
 deploy: clean build
-	sls deploy --verbose
+	git push heroku master
